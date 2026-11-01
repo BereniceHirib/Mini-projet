@@ -67,5 +67,3 @@ if commune:
     df = chercher=(commune)
     st.dataframe(df)
 
-r.raise_for_status()
-return pd.DataFrame(r.json()["results"])
