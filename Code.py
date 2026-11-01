@@ -64,5 +64,5 @@ if valide:
 
 commune = st.text_input("Commune", "Rennes")
 if commune:
-    df = conso_commune(commune)
+    df = chercher=(commune)
     st.dataframe(df)
