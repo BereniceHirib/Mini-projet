@@ -23,19 +23,44 @@ import streamlit as st
 BASE = "https://opendata.agenceore.fr/api/explore/v2.1/catalog/datasets"
 DATASET = "consommation-annuelle-d-electricite-et-gaz-par-commune"
 
+# À adapter avec les vrais noms de champs (voir ?limit=3 dans le navigateur)
+CHAMP_COMMUNE = "nom_commune"
+CHAMP_ANNEE = "annee"
+
 @st.cache_data(ttl=3600)
-def conso_commune(commune: str) -> pd.DataFrame:
+def chercher(commune: str) -> pd.DataFrame:
+    commune = commune.replace('"', "")  # évite de casser la requête
     r = requests.get(
         f"{BASE}/{DATASET}/records",
         params={
-            "where": f'nom_commune="{commune}"',   # adapte au nom exact de la colonne
+            "where": f'{CHAMP_COMMUNE}="{commune}"',
+            "order_by": CHAMP_ANNEE,
             "limit": 100,
-            "order_by": "annee",
         },
         timeout=30,
     )
     r.raise_for_status()
     return pd.DataFrame(r.json()["results"])
+
+st.title("Consommation énergétique de ma commune")
+
+with st.form("recherche"):
+    nom = st.text_input("Nom de votre commune")
+    valide = st.form_submit_button("Voir les données")
+
+if valide:
+    if not nom.strip():
+        st.warning("Merci de saisir un nom de commune.")
+    else:
+        try:
+            df = chercher(nom.strip())
+        except requests.RequestException:
+            st.error("Impossible de joindre le service de données. Réessayez plus tard.")
+        else:
+            if df.empty:
+                st.info("Aucune donnée trouvée. Vérifiez l'orthographe (accents, tirets).")
+            else:
+                st.subheader(nom.strip())
 
 commune = st.text_input("Commune", "Rennes")
 if commune:
